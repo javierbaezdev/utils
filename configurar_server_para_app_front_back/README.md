@@ -689,6 +689,164 @@ sudo certbot delete --cert-name tu-dominio.duckdns.org
 
 ---
 
+## Configurar Auto-Inicio del Proyecto
+
+### Descripción
+
+Configuración para que tu proyecto Docker Compose se inicie automáticamente cuando se encienda el servidor.
+
+### Opción 1: Servicio Systemd (Recomendado)
+
+#### 1. Crear archivo de servicio:
+
+```bash
+sudo nano /etc/systemd/system/onku-app.service
+```
+
+#### 2. Contenido del archivo:
+
+```ini
+[Unit]
+Description=Onku App Docker Compose
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/TU_USUARIO/nombre-del-proyecto
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=0
+User=TU_USUARIO
+Group=docker
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Importante:** Cambiar `TU_USUARIO` y `nombre-del-proyecto` por los valores correctos.
+
+#### 3. Habilitar y iniciar el servicio:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable onku-app.service
+sudo systemctl start onku-app.service
+```
+
+#### 4. Verificar estado:
+
+```bash
+sudo systemctl status onku-app.service
+```
+
+### Opción 2: Docker Restart Policy
+
+#### Modificar docker-compose.yml:
+
+Agregar `restart: unless-stopped` a cada servicio:
+
+```yaml
+services:
+  onku-frontend:
+    restart: unless-stopped
+    # ... resto de configuración
+
+  onku-backend:
+    restart: unless-stopped
+    # ... resto de configuración
+```
+
+#### Aplicar cambios:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+### Opción 3: Cron Job con @reboot
+
+#### 1. Editar crontab:
+
+```bash
+crontab -e
+```
+
+#### 2. Agregar línea:
+
+```bash
+@reboot cd /home/TU_USUARIO/nombre-del-proyecto && /usr/bin/docker compose up -d
+```
+
+### Comandos útiles para gestionar el servicio
+
+#### Ver estado del servicio:
+
+```bash
+sudo systemctl status onku-app.service
+```
+
+#### Iniciar manualmente:
+
+```bash
+sudo systemctl start onku-app.service
+```
+
+#### Detener:
+
+```bash
+sudo systemctl stop onku-app.service
+```
+
+#### Deshabilitar auto-inicio:
+
+```bash
+sudo systemctl disable onku-app.service
+```
+
+#### Ver logs del servicio:
+
+```bash
+sudo journalctl -u onku-app.service -f
+```
+
+#### Reiniciar servicio:
+
+```bash
+sudo systemctl restart onku-app.service
+```
+
+### Verificar que funciona
+
+#### 1. Reiniciar el servidor:
+
+```bash
+sudo reboot
+```
+
+#### 2. Después de reiniciar, verificar contenedores:
+
+```bash
+docker compose ps
+```
+
+#### 3. Verificar servicio:
+
+```bash
+sudo systemctl status onku-app.service
+```
+
+### Notas importantes:
+
+- La **Opción 1 (Systemd)** es la más robusta y recomendada
+- La **Opción 2 (Restart Policy)** es más simple pero depende de Docker
+- La **Opción 3 (Cron)** es básica pero funcional
+- Siempre usa rutas absolutas en las configuraciones
+- Verifica que el usuario tenga permisos para Docker
+
+---
+
 ## Otros Scripts
 
 _Espacio para futuras utilidades..._
